@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>🏰 Labirin Quest - Dasar TKJ</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+  body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    color: white;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  h1 { 
+    text-align: center; 
+    margin-bottom: 10px; 
+    font-size: 2em; 
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+    color: #ffd700;
+  }
+  .subtitle { 
+    text-align: center; 
+    margin-bottom: 15px; 
+    opacity: 0.9;
+    font-size: 0.95em;
+  }
+  .game-container {
+    position: relative;
+    max-width: 900px;
+    width: 100%;
+  }
+  .info-bar {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    background: rgba(255,255,255,0.1);
+    padding: 12px 20px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
+  }
+  .info-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .info-label {
+    font-size: 0.9em;
+    opacity: 0.8;
+  }
+  .info-value {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #ffd700;
+  }
+  canvas {
+    display: block;
+    margin: 0 auto;
+    border: 3px solid #ffd700;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    background: #0f3460;
+  }
+  .question-box {
+    margin-top: 20px;
+    background: rgba(255,255,255,0.95);
+    color: #333;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    max-width: 900px;
+    width: 100%;
+  }
+  .question-num {
+    display: inline-block;
+    background: #16213e;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.9em;
+    margin-bottom: 10px;
+  }
+  .question {
+    font-size: 1.15em;
+    line-height: 1.5;
+    font-weight: 600;
+  }
+  .controls-info {
+    margin-top: 15px;
+    text-align: center;
+    font-size: 0.9em;
+    opacity: 0.8;
+  }
+  .controls-info kbd {
+    background: #333;
+    color: white;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-family: monospace;
+    margin: 0 2px;
+  }
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.9);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal.show { display: flex; }
+  .modal-content {
+    background: white;
+    color: #333;
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    max-width: 500px;
+    animation: pop 0.5s;
+  }
+  @keyframes pop {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+  }
+  .modal h2 { font-size: 2.5em; margin-bottom: 15px; color: #16213e; }
+  .modal .trophy { font-size: 5em; margin-bottom: 10px; }
+  .restart-btn {
+    margin-top: 20px;
+    padding: 12px 30px;
+    background: #16213e;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    font-weight: bold;
+  }
+  .restart-btn:hover { background: #0f1a2e; }
+  .start-screen {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.95);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 50;
+    border-radius: 10px;
+  }
+  .start-screen h2 {
+    font-size: 2em;
+    margin-bottom: 20px;
+    color: #ffd700;
+  }
+  .start-screen p {
+    margin-bottom: 10px;
+    text-align: center;
+    max-width: 600px;
+    line-height: 1.6;
+  }
+  .start-btn {
+    margin-top: 20px;
+    padding: 15px 40px;
+    background: #ffd700;
+    color: #16213e;
+    border: none;
+    border-radius: 10px;
+    font-size: 1.2em;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+  }
+  .start-btn:hover {
+    background: #ffed4e;
+    transform: scale(1.05);
+  }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<h1>🏰 Labirin Quest: Dasar TKJ 🏰</h1>
+<p class="subtitle">Navigasi labirin, hindari monster, dan jawab pertanyaan dengan benar!</p>
+
+<div class="game-container">
+  <div class="info-bar">
+    <div class="info-item">
+      <span class="info-label">Soal:</span>
+      <span class="info-value" id="questionNum">1/10</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">Skor:</span>
+      <span class="info-value" id="score">0</span>
+    </div>
+    <div class="info-item">
+      <span class="info-label">Nyawa:</span>
+      <span class="info-value" id="lives">❤️❤️❤️</span>
+    </div>
+  </div>
+
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+
+  <div class="start-screen" id="startScreen">
+    <h2>🏰 Selamat Datang di Labirin Quest!</h2>
+    <p><strong>Tujuan:</strong> Gerakkan karakter untuk mencapai area jawaban yang benar di labirin.</p>
+    <p><strong>Hindari:</strong> Monster yang bergerak acak. Jika tersentuh, nyawa berkurang!</p>
+    <p><strong>Jawaban Benar:</strong> Area akan aman, dapat poin, dan lanjut ke soal berikutnya.</p>
+    <p><strong>Jawaban Salah:</strong> Coba area lain, tapi tetap waspada monster!</p>
+    <button class="start-btn" onclick="startGame()">🎮 Mulai Bermain</button>
+  </div>
+</div>
+
+<div class="question-box">
+  <span class="question-num" id="qNum">Soal 1</span>
+  <div class="question" id="question">Memuat soal...</div>
+  <div class="controls-info">
+    <strong>Kontrol:</strong> Gunakan <kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> atau <kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> untuk bergerak
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <div class="trophy" id="trophy">🏆</div>
+    <h2 id="winnerText">Selesai!</h2>
+    <p id="finalScore"></p>
+    <button class="restart-btn" onclick="restartGame()">🔄 Main Lagi</button>
+  </div>
+</div>
+
+<script>
+// === SOAL DASAR TKJ ===
+const questions = [
+  {
+    q: "Apa kepanjangan dari LAN?",
+    options: ["Local Area Network", "Large Area Network", "Long Access Network", "Linked Access Node"],
+    answer: 0
+  },
+  {
+    q: "Topologi jaringan di mana semua komputer terhubung ke satu kabel pusat disebut?",
+    options: ["Star", "Ring", "Bus", "Mesh"],
+    answer: 2
+  },
+  {
+    q: "Perangkat yang berfungsi menghubungkan dua jaringan berbeda adalah?",
+    options: ["Hub", "Switch", "Router", "Repeater"],
+    answer: 2
+  },
+  {
+    q: "IP Address versi 4 terdiri dari berapa bit?",
+    options: ["16 bit", "32 bit", "64 bit", "128 bit"],
+    answer: 1
+  },
+  {
+    q: "Protokol yang digunakan untuk mengirim email adalah?",
+    options: ["HTTP", "FTP", "SMTP", "TCP"],
+    answer: 2
+  },
+  {
+    q: "Jaringan komputer yang mencakup area satu kota disebut?",
+    options: ["LAN", "MAN", "WAN", "PAN"],
+    answer: 1
+  },
+  {
+    q: "Kabel jaringan yang paling umum digunakan saat ini adalah?",
+    options: ["Coaxial", "Fiber Optic", "UTP", "STP"],
+    answer: 2
+  },
+  {
+    q: "Subnet mask default untuk IP kelas C adalah?",
+    options: ["255.0.0.0", "255.255.0.0", "255.255.255.0", "255.255.255.255"],
+    answer: 2
+  },
+  {
+    q: "Perangkat yang mengubah sinyal digital menjadi analog adalah?",
+    options: ["Router", "Switch", "Modem", "Hub"],
+    answer: 2
+  },
+  {
+    q: "Topologi jaringan di mana setiap komputer terhubung ke perangkat pusat disebut?",
+    options: ["Bus", "Star", "Ring", "Tree"],
+    answer: 1
+  }
+];
+
+// === GAME STATE ===
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+const TILE_SIZE = 40;
+const COLS = 20;
+const ROWS = 15;
+
+let player = { x: 1, y: 1, size: 30 };
+let monsters = [];
+let answerAreas = [];
+let currentQuestion = 0;
+let score = 0;
+let lives = 3;
+let gameActive = false;
+let keys = {};
+let effects = [];
+
+// Maze layout (0 = path, 1 = wall)
+const maze = [
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+  [1,0,0,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
+  [1,0,1,0,1,0,1,1,1,1,1,1,1,0,1,0,1,1,0,1],
+  [1,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0,1,0,0,1],
+  [1,0,1,1,1,1,1,1,1,1,1,0,1,1,1,0,1,0,1,1],
+  [1,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,1,0,0,1],
+  [1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
+  [1,1,1,1,1,1,1,1,1,0,1,1,1,1,1,1,0,1,0,1],
+  [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,1,0,0,0,1],
+  [1,0,1,1,1,1,1,0,1,1,1,1,1,1,0,1,1,1,0,1],
+  [1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+  [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+];
+
+// === AUDIO ===
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+function playSound(type) {
+  const oscillator = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+  
+  oscillator.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  
+  if (type === 'correct') {
+    oscillator.frequency.value = 523.25; // C5
+    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + 0.3);
+  } else if (type === 'wrong') {
+    oscillator.frequency.value = 200;
+    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + 0.3);
+  } else if (type === 'hit') {
+    oscillator.frequency.value = 100;
+    gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + 0.2);
+  }
+}
+
+// Background music
+let bgMusic = null;
+function startBgMusic() {
+  if (bgMusic) return;
+  
+  bgMusic = audioCtx.createOscillator();
+  const gainNode = audioCtx.createGain();
+  
+  bgMusic.type = 'sine';
+  bgMusic.frequency.value = 220;
+  gainNode.gain.value = 0.05;
+  
+  bgMusic.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  
+  bgMusic.start();
+}
+
+function stopBgMusic() {
+  if (bgMusic) {
+    bgMusic.stop();
+    bgMusic = null;
+  }
+}
+
+// === GAME FUNCTIONS ===
+function createAnswerAreas() {
+  answerAreas = [];
+  const positions = [
+    { x: 18, y: 1 },
+    { x: 18, y: 13 },
+    { x: 1, y: 13 },
+    { x: 9, y: 7 }
+  ];
+  
+  const q = questions[currentQuestion];
+  positions.forEach((pos, i) => {
+    answerAreas.push({
+      x: pos.x * TILE_SIZE,
+      y: pos.y * TILE_SIZE,
+      width: TILE_SIZE * 2,
+      height: TILE_SIZE * 2,
+      text: q.options[i],
+      index: i,
+      isCorrect: i === q.answer,
+      selected: false,
+      locked: false
+    });
+  });
+}
+
+function createMonsters() {
+  monsters = [];
+  const monsterPositions = [
+    { x: 5, y: 3 },
+    { x: 15, y: 5 },
+    { x: 10, y: 10 },
+    { x: 3, y: 11 }
+  ];
+  
+  monsterPositions.forEach(pos => {
+    monsters.push({
+      x: pos.x * TILE_SIZE + TILE_SIZE / 2,
+      y: pos.y * TILE_SIZE + TILE_SIZE / 2,
+      size: 30,
+      dx: (Math.random() - 0.5) * 2,
+      dy: (Math.random() - 0.5) * 2,
+      speed: 1.5
+    });
+  });
+}
+
+function drawMaze() {
+  for (let row = 0; row < ROWS; row++) {
+    for (let col = 0; col < COLS; col++) {
+      if (maze[row][col] === 1) {
+        ctx.fillStyle = '#2c3e50';
+        ctx.fillRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+        ctx.strokeStyle = '#34495e';
+        ctx.strokeRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+      } else {
+        ctx.fillStyle = '#34495e';
+        ctx.fillRect(col * TILE_SIZE, row * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+      }
+    }
+  }
+}
+
+function drawPlayer() {
+  ctx.fillStyle = '#ffd700';
+  ctx.beginPath();
+  ctx.arc(player.x * TILE_SIZE + TILE_SIZE / 2, player.y * TILE_SIZE + TILE_SIZE / 2, player.size / 2, 0, Math.PI * 2);
+  ctx.fill();
+  
+  ctx.fillStyle = '#000';
+  ctx.font = '20px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🧙', player.x * TILE_SIZE + TILE_SIZE / 2, player.y * TILE_SIZE + TILE_SIZE / 2);
+}
+
+function drawMonsters() {
+  monsters.forEach(monster => {
+    ctx.fillStyle = '#e74c3c';
+    ctx.beginPath();
+    ctx.arc(monster.x, monster.y, monster.size / 2, 0, Math.PI * 2);
+    ctx.fill();
+    
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('👾', monster.x, monster.y);
+  });
+}
+
+function drawAnswerAreas() {
+  answerAreas.forEach(area => {
+    if (area.locked) {
+      ctx.fillStyle = 'rgba(46, 204, 113, 0.5)';
+    } else {
+      ctx.fillStyle = area.selected ? 'rgba(231, 76, 60, 0.5)' : 'rgba(52, 152, 219, 0.5)';
+    }
+    ctx.fillRect(area.x, area.y, area.width, area.height);
+    
+    ctx.strokeStyle = area.locked ? '#2ecc71' : '#fff';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(area.x, area.y, area.width, area.height);
+    
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    
+    const textLines = wrapText(area.text, 15);
+    textLines.forEach((line, i) => {
+      ctx.fillText(line, area.x + area.width / 2, area.y + area.height / 2 - (textLines.length - 1) * 8 + i * 16);
+    });
+    
+    if (area.locked && area.isCorrect) {
+      ctx.font = '30px Arial';
+      ctx.fillText('✓', area.x + area.width / 2, area.y + area.height / 2);
+    }
+  });
+}
+
+function wrapText(text, maxWidth) {
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = '';
+  
+  words.forEach(word => {
+    const testLine = currentLine + (currentLine ? ' ' : '') + word;
+    if (testLine.length <= maxWidth) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) lines.push(currentLine);
+      currentLine = word;
+    }
+  });
+  if (currentLine) lines.push(currentLine);
+  
+  return lines;
+}
+
+function drawEffects() {
+  effects = effects.filter(effect => {
+    effect.life--;
+    
+    if (effect.type === 'firework') {
+      ctx.fillStyle = `hsla(${effect.hue}, 100%, 50%, ${effect.life / effect.maxLife})`;
+      ctx.beginPath();
+      ctx.arc(effect.x, effect.y, effect.size, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (effect.type === 'bomb') {
+      ctx.fillStyle = `rgba(231, 76, 60, ${effect.life / effect.maxLife})`;
+      ctx.beginPath();
+      ctx.arc(effect.x, effect.y, effect.size, 0, Math.PI * 2);
+      ctx.fill();
+      
+      ctx.font = `${effect.size}px Arial`;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('💥', effect.x, effect.y);
+    }
+    
+    return effect.life > 0;
+  });
+}
+
+function createFireworks(x, y) {
+  for (let i = 0; i < 30; i++) {
+    effects.push({
+      type: 'firework',
+      x: x,
+      y: y,
+      size: Math.random() * 5 + 2,
+      hue: Math.random() * 360,
+      life: 60,
+      maxLife: 60
+    });
+  }
+}
+
+function createBomb(x, y) {
+  effects.push({
+    type: 'bomb',
+    x: x,
+    y: y,
+    size: 40,
+    life: 40,
+    maxLife: 40
+  });
+}
+
+function movePlayer() {
+  let newX = player.x;
+  let newY = player.y;
+  
+  if (keys['ArrowUp'] || keys['w'] || keys['W']) newY--;
+  if (keys['ArrowDown'] || keys['s'] || keys['S']) newY++;
+  if (keys['ArrowLeft'] || keys['a'] || keys['A']) newX--;
+  if (keys['ArrowRight'] || keys['d'] || keys['D']) newX++;
+  
+  if (newX >= 0 && newX < COLS && newY >= 0 && newY < ROWS && maze[newY][newX] === 0) {
+    player.x = newX;
+    player.y = newY;
+  }
+}
+
+function moveMonsters() {
+  monsters.forEach(monster => {
+    monster.x += monster.dx * monster.speed;
+    monster.y += monster.dy * monster.speed;
+    
+    const gridX = Math.floor(monster.x / TILE_SIZE);
+    const gridY = Math.floor(monster.y / TILE_SIZE);
+    
+    if (gridX < 0 || gridX >= COLS || gridY < 0 || gridY >= ROWS || maze[gridY][gridX] === 1) {
+      monster.dx = -monster.dx;
+      monster.dy = -monster.dy;
+      monster.x += monster.dx * monster.speed * 2;
+      monster.y += monster.dy * monster.speed * 2;
+    }
+    
+    if (Math.random() < 0.02) {
+      monster.dx = (Math.random() - 0.5) * 2;
+      monster.dy = (Math.random() - 0.5) * 2;
+    }
+  });
+}
+
+function checkCollisions() {
+  // Check monster collision
+  monsters.forEach(monster => {
+    const dx = (player.x * TILE_SIZE + TILE_SIZE / 2) - monster.x;
+    const dy = (player.y * TILE_SIZE + TILE_SIZE / 2) - monster.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance < (player.size + monster.size) / 2) {
+      lives--;
+      playSound('hit');
+      document.getElementById('lives').textContent = '❤️'.repeat(lives) || '💀';
+      
+      if (lives <= 0) {
+        endGame(false);
+      } else {
+        player.x = 1;
+        player.y = 1;
+      }
+    }
+  });
+  
+  // Check answer area collision
+  answerAreas.forEach(area => {
+    if (area.locked) return;
+    
+    const playerCenterX = player.x * TILE_SIZE + TILE_SIZE / 2;
+    const playerCenterY = player.y * TILE_SIZE + TILE_SIZE / 2;
+    
+    if (playerCenterX >= area.x && playerCenterX <= area.x + area.width &&
+        playerCenterY >= area.y && playerCenterY <= area.y + area.height) {
+      
+      area.selected = true;
+      
+      if (area.isCorrect) {
+        area.locked = true;
+        score += 100;
+        playSound('correct');
+        createFireworks(area.x + area.width / 2, area.y + area.height / 2);
+        document.getElementById('score').textContent = score;
+        
+        setTimeout(() => {
+          currentQuestion++;
+          if (currentQuestion >= questions.length) {
+            endGame(true);
+          } else {
+            loadQuestion();
+          }
+        }, 1500);
+      } else {
+        playSound('wrong');
+        createBomb(area.x + area.width / 2, area.y + area.height / 2);
+        
+        setTimeout(() => {
+          area.selected = false;
+        }, 1000);
+      }
+    }
+  });
+}
+
+function loadQuestion() {
+  const q = questions[currentQuestion];
+  document.getElementById('qNum').textContent = `Soal ${currentQuestion + 1}`;
+  document.getElementById('question').textContent = q.q;
+  document.getElementById('questionNum').textContent = `${currentQuestion + 1}/${questions.length}`;
+  
+  createAnswerAreas();
+  createMonsters();
+  player.x = 1;
+  player.y = 1;
+}
+
+function gameLoop() {
+  if (!gameActive) return;
+  
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  drawMaze();
+  drawAnswerAreas();
+  drawMonsters();
+  drawPlayer();
+  drawEffects();
+  
+  movePlayer();
+  moveMonsters();
+  checkCollisions();
+  
+  requestAnimationFrame(gameLoop);
+}
+
+function startGame() {
+  document.getElementById('startScreen').classList.add('hidden');
+  gameActive = true;
+  currentQuestion = 0;
+  score = 0;
+  lives = 3;
+  document.getElementById('score').textContent = score;
+  document.getElementById('lives').textContent = '❤️❤️❤️';
+  
+  startBgMusic();
+  loadQuestion();
+  gameLoop();
+}
+
+function endGame(won) {
+  gameActive = false;
+  stopBgMusic();
+  
+  const modal = document.getElementById('modal');
+  const trophy = document.getElementById('trophy');
+  const winnerText = document.getElementById('winnerText');
+  const finalScore = document.getElementById('finalScore');
+  
+  if (won) {
+    trophy.textContent = '🏆';
+    winnerText.textContent = 'Selamat! Kamu Menang!';
+  } else {
+    trophy.textContent = '💀';
+    winnerText.textContent = 'Game Over!';
+  }
+  
+  finalScore.innerHTML = `Skor Akhir: <b>${score}</b><br>Soal Terjawab: <b>${currentQuestion}/${questions.length}</b>`;
+  modal.classList.add('show');
+}
+
+function restartGame() {
+  document.getElementById('modal').classList.remove('show');
+  startGame();
+}
+
+// === INPUT HANDLING ===
+document.addEventListener('keydown', (e) => {
+  keys[e.key] = true;
+});
+
+document.addEventListener('keyup', (e) => {
+  keys[e.key] = false;
+});
+
+// Initial draw
+ctx.fillStyle = '#0f3460';
+ctx.fillRect(0, 0, canvas.width, canvas.height);
+</script>
+
+</body>
+</html>
