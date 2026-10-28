@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Labirin Quest: Perintah Dasar Linux</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome & Google Font -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Fira Code', monospace;
+      background-color: #0d1117;
+      color: #c9d1d9;
+      user-select: none;
+      touch-action: manipulation;
+    }
+    .retro-font {
+      font-family: 'Press Start 2P', cursive;
+    }
+    /* Neon Glow Effects */
+    .glow-green {
+      text-shadow: 0 0 10px rgba(57, 255, 20, 0.8);
+    }
+    .glow-cyan {
+      text-shadow: 0 0 10px rgba(0, 243, 255, 0.8);
+    }
+    .box-glow {
+      box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+    }
+    /* Canvas styling */
+    #gameCanvas {
+      background: #080c14;
+      border: 3px solid #1f6feb;
+      box-shadow: 0 0 20px rgba(31, 111, 235, 0.4);
+    }
+    /* Custom Scrollbar for Modal/Question text */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #30363d;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-2 sm:p-4 overflow-x-hidden">
+
+  <!-- TOP BAR / HEADER -->
+  <header class="w-full max-w-4xl bg-gray-900 border border-cyan-500/40 rounded-xl p-3 mb-2 box-glow">
+    <div class="flex flex-wrap justify-between items-center gap-2 mb-2">
+      <div class="flex items-center gap-2">
+        <span class="text-2xl">🐧</span>
+        <h1 class="text-lg sm:text-xl font-bold text-cyan-400 tracking-wider glow-cyan">LABIRIN QUEST: LINUX</h1>
+      </div>
+      
+      <!-- AUDIO CONTROLS & STATS -->
+      <div class="flex items-center gap-4 text-sm sm:text-base">
+        <div class="flex items-center gap-1 text-red-400 font-bold">
+          <i class="fa-solid fa-heart text-red-500"></i>
+          <span id="hpDisplay">❤❤❤</span>
+        </div>
+        <div class="flex items-center gap-1 text-yellow-400 font-bold">
+          <i class="fa-solid fa-star"></i>
+          <span id="scoreDisplay">0</span>
+        </div>
+        <div class="flex gap-2">
+          <button id="btnBgm" onclick="toggleBGM()" class="bg-gray-800 hover:bg-gray-700 text-cyan-400 border border-cyan-500/50 px-2.5 py-1 rounded text-xs font-bold transition">
+            <i class="fa-solid fa-music"></i> BGM: <span id="bgmStatus">OFF</span>
+          </button>
+          <button id="btnSfx" onclick="toggleSFX()" class="bg-gray-800 hover:bg-gray-700 text-cyan-400 border border-cyan-500/50 px-2.5 py-1 rounded text-xs font-bold transition">
+            <i class="fa-solid fa-volume-high"></i> SFX: <span id="sfxStatus">ON</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- QUESTION BOX -->
+    <div class="bg-gray-950 border border-gray-700 p-3 rounded-lg text-sm sm:text-base">
+      <div class="flex justify-between text-xs text-gray-400 mb-1">
+        <span id="questionNum" class="text-green-400 font-bold">SOAL 1 / 12</span>
+        <span class="text-gray-400"><i class="fa-solid fa-shield-halved text-cyan-400"></i> Cari zona jawaban & hindari monster!</span>
+      </div>
+      <p id="questionText" class="text-cyan-100 font-medium leading-relaxed">
+        Memuat pertanyaan perintah Linux...
+      </p>
+    </div>
+  </header>
+
+  <!-- MAIN GAMEPLAY AREA -->
+  <main class="relative w-full max-w-4xl flex flex-col items-center justify-center">
+    
+    <!-- CANVAS -->
+    <div class="relative w-full flex justify-center items-center">
+      <canvas id="gameCanvas" width="800" height="600" class="w-full max-w-[800px] h-auto rounded-lg"></canvas>
+
+      <!-- OVERLAY START SCREEN -->
+      <div id="startOverlay" class="absolute inset-0 bg-gray-950/95 backdrop-blur-md rounded-lg flex flex-col items-center justify-center p-6 text-center z-20">
+        <div class="text-5xl mb-3">🐧⚔️👾</div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-cyan-400 mb-2 glow-cyan">LABIRIN QUEST</h2>
+        <p class="text-xs sm:text-sm text-gray-300 max-w-md mb-6 leading-relaxed">
+          Kuasai Perintah Dasar Linux! Gerakkan karakter Tux ke zona jawaban (A, B, C, D, E) yang benar di dalam labirin sambil melepaskan diri dari kejaran monster.
+        </p>
+        
+        <div class="bg-gray-900 border border-gray-700 p-4 rounded-xl text-left text-xs text-gray-300 max-w-md mb-6 space-y-2">
+          <p><span class="text-green-400 font-bold">🎯 Jawab Benar:</span> Zone terkunci aman dari monster & lanjut ke soal berikutnya.</p>
+          <p><span class="text-red-400 font-bold">💥 Jawab Salah:</span> Zone meledak, kamu masih bisa pilih zone lain!</p>
+          <p><span class="text-yellow-400 font-bold">👾 Monster:</span> Bergerak acak. Sentuhan monster mengurangi HP (-1).</p>
+        </div>
+
+        <button onclick="startGame()" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-8 py-3 rounded-xl shadow-lg shadow-emerald-500/30 text-lg transition-transform transform hover:scale-105 active:scale-95">
+          <i class="fa-solid fa-play mr-2"></i> MULAI PETUALANGAN
+        </button>
+      </div>
+
+      <!-- OVERLAY GAME OVER -->
+      <div id="gameOverOverlay" class="hidden absolute inset-0 bg-red-950/95 backdrop-blur-md rounded-lg flex flex-col items-center justify-center p-6 text-center z-20">
+        <div class="text-5xl mb-2">☠️</div>
+        <h2 class="text-3xl font-extrabold text-red-500 mb-2">GAME OVER</h2>
+        <p class="text-sm text-gray-300 mb-4">HP Kamu telah habis diserang monster labirin!</p>
+        <p class="text-lg text-yellow-400 font-bold mb-6">Skor Akhir: <span id="finalScoreFail">0</span></p>
+        <button onclick="restartGame()" class="bg-red-600 hover:bg-red-500 text-white font-bold px-6 py-2.5 rounded-xl shadow-lg transition">
+          <i class="fa-solid fa-rotate-right mr-2"></i> COBA LAGI
+        </button>
+      </div>
+
+      <!-- OVERLAY VICTORY -->
+      <div id="victoryOverlay" class="hidden absolute inset-0 bg-gray-950/95 backdrop-blur-md rounded-lg flex flex-col items-center justify-center p-6 text-center z-20 overflow-y-auto">
+        <div class="text-5xl mb-2">🏆👑</div>
+        <h2 class="text-2xl sm:text-3xl font-extrabold text-yellow-400 mb-2 glow-green">VICTORY! SYSTEM MASTER</h2>
+        <p class="text-xs sm:text-sm text-gray-300 mb-4">Kamu berhasil menyelesaikan seluruh labirin perintah Linux!</p>
+        
+        <div class="bg-gray-900 border border-gray-700 p-4 rounded-xl text-left w-full max-w-md mb-4 text-xs">
+          <p class="text-yellow-400 font-bold text-sm mb-2 text-center">RANGKUMAN SKOR: <span id="finalScoreWin">0</span></p>
+          <div class="font-bold text-cyan-400 mb-1">Command Linux yang Dipelajari:</div>
+          <ul id="summaryList" class="list-disc list-inside space-y-1 text-gray-300 max-h-36 overflow-y-auto pr-2">
+            <!-- Dynamic Content -->
+          </ul>
+        </div>
+
+        <button onclick="restartGame()" class="bg-cyan-600 hover:bg-cyan-500 text-white font-bold px-8 py-3 rounded-xl shadow-lg transition">
+          <i class="fa-solid fa-rotate-right mr-2"></i> MAIN LAGI
+        </button>
+      </div>
+    </div>
+
+    <!-- TOUCH D-PAD CONTROLS (FOR MOBILE/TABLET) -->
+    <div class="mt-3 flex justify-between items-center w-full max-w-sm px-2 sm:hidden">
+      <div class="grid grid-cols-3 gap-1.5 w-36 h-36">
+        <div></div>
+        <button ontouchstart="handlePadStart('Up')" ontouchend="handlePadEnd('Up')" mousedown="handlePadStart('Up')" mouseup="handlePadEnd('Up')" class="bg-gray-800 border border-cyan-500/50 active:bg-cyan-600 text-cyan-300 rounded-lg flex items-center justify-center text-xl shadow">▲</button>
+        <div></div>
+        <button ontouchstart="handlePadStart('Left')" ontouchend="handlePadEnd('Left')" mousedown="handlePadStart('Left')" mouseup="handlePadEnd('Left')" class="bg-gray-800 border border-cyan-500/50 active:bg-cyan-600 text-cyan-300 rounded-lg flex items-center justify-center text-xl shadow">◀</button>
+        <div class="bg-gray-900 rounded-lg flex items-center justify-center text-xs text-gray-600 font-bold">DPAD</div>
+        <button ontouchstart="handlePadStart('Right')" ontouchend="handlePadEnd('Right')" mousedown="handlePadStart('Right')" mouseup="handlePadEnd('Right')" class="bg-gray-800 border border-cyan-500/50 active:bg-cyan-600 text-cyan-300 rounded-lg flex items-center justify-center text-xl shadow">▶</button>
+        <div></div>
+        <button ontouchstart="handlePadStart('Down')" ontouchend="handlePadEnd('Down')" mousedown="handlePadStart('Down')" mouseup="handlePadEnd('Down')" class="bg-gray-800 border border-cyan-500/50 active:bg-cyan-600 text-cyan-300 rounded-lg flex items-center justify-center text-xl shadow">▼</button>
+        <div></div>
+      </div>
+      <div class="text-xs text-gray-400 text-right max-w-[150px]">
+        Gunakan D-Pad atau Keyboard (Panah / WASD) untuk mengendalikan Tux!
+      </div>
+    </div>
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="mt-3 text-center text-xs text-gray-500">
+    Labirin Quest: Perintah Dasar Linux &copy; Web Game Education
+  </footer>
+
+  <script>
+    /* =========================================================================
+       1. BANK SOAL PERINTAH DASAR LINUX (12 SOAL)
+       ========================================================================= */
+    const questionBank = [
+      {
+        q: "Perintah mana yang digunakan untuk berpindah direktori di Linux?",
+        options: ["cd", "ls", "pwd", "mkdir", "mv"],
+        correct: 0,
+        desc: "cd (Change Directory) berpindah direktori."
+      },
+      {
+        q: "Perintah apa yang dipakai untuk menampilkan daftar berkas/folder dalam direktori saat ini?",
+        options: ["dirlist", "list", "ls", "show", "cat"],
+        correct: 2,
+        desc: "ls (List) menampilkan isi direktori."
+      },
+      {
+        q: "Perintah mana yang digunakan untuk membuat folder/direktori baru?",
+        options: ["newfolder", "createdir", "touch", "mkdir", "md"],
+        correct: 3,
+        desc: "mkdir (Make Directory) membuat folder baru."
+      },
+      {
+        q: "Bagaimana cara melihat jalur lokasi direktori kerja saat ini (Print Working Directory)?",
+        options: ["path", "pwd", "whereami", "dir", "loc"],
+        correct: 1,
+        desc: "pwd menampilkan lokasi direktori saat ini."
+      },
+      {
+        q: "Perintah untuk menghapus file atau direktori di Linux adalah...",
+        options: ["del", "remove", "rm", "erase", "unlink"],
+        correct: 2,
+        desc: "rm (Remove) menghapus berkas atau folder."
+      },
+      {
+        q: "Perintah mana yang digunakan untuk membaca/menampilkan isi dari suatu file teks ke layar?",
+        options: ["view", "cat", "open", "read", "echo"],
+        correct: 1,
+        desc: "cat (Concatenate) membaca dan menampilkan isi berkas."
+      },
+      {
+        q: "Untuk mengubah izin akses (permissions) suatu file atau direktori, kita menggunakan...",
+        options: ["chown", "chmod", "attrib", "sudo", "setperm"],
+        correct: 1,
+        desc: "chmod (Change Mode) mengubah hak akses berkas."
+      },
+      {
+        q: "Perintah yang digunakan untuk menyalin (copy) file dari satu lokasi ke lokasi lain adalah...",
+        options: ["cp", "copy", "dup", "clone", "mv"],
+        correct: 0,
+        desc: "cp (Copy) menyalin berkas/folder."
+      },
+      {
+        q: "Perintah yang digunakan untuk memindahkan file atau mengubah nama file (rename) adalah...",
+        options: ["rename", "move", "mv", "shift", "transfer"],
+        correct: 2,
+        desc: "mv (Move) memindahkan atau mengubah nama berkas."
+      },
+      {
+        q: "Perintah mana yang dipakai untuk mencari pola teks tertentu di dalam file?",
+        options: ["find", "grep", "search", "locate", "scan"],
+        correct: 1,
+        desc: "grep mencari string/pola di dalam file."
+      },
+      {
+        q: "Perintah untuk menjalankan tugas dengan hak akses Superuser / Administrator adalah...",
+        options: ["admin", "su", "root", "sudo", "exec"],
+        correct: 3,
+        desc: "sudo (SuperUser DO) menjalankan perintah sebagai root."
+      },
+      {
+        q: "Perintah mana yang digunakan untuk memantau proses sistem & penggunaan RAM/CPU secara terpisah/real-time?",
+        options: ["top", "ps", "taskmgr", "sysmon", "proc"],
+        correct: 0,
+        desc: "top menampilkan tabel proses sistem yang aktif."
+      }
+    ];
+
+    /* =========================================================================
+       2. AUDIO ENGINE (PROCEDURAL WEB AUDIO API)
+       ========================================================================= */
+    let audioCtx = null;
+    let bgmMuted = true;
+    let sfxMuted = false;
+    let bgmInterval = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function toggleBGM() {
+      initAudio();
+      bgmMuted = !bgmMuted;
+      document.getElementById('bgmStatus').innerText = bgmMuted ? "OFF" : "ON";
+      if (!bgmMuted) {
+        startBGM();
+      } else {
+        stopBGM();
+      }
+    }
+
+    function toggleSFX() {
+      initAudio();
+      sfxMuted = !sfxMuted;
+      document.getElementById('sfxStatus').innerText = sfxMuted ? "OFF" : "ON";
+    }
+
+    // Play Chiptune Notes for BGM
+    function playBgmNote(freq, duration) {
+      if (bgmMuted || !audioCtx) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch(e){}
+    }
+
+    function startBGM() {
+      stopBGM();
+      const melody = [261.63, 329.63, 392.00, 523.25, 392.00, 329.63, 293.66, 349.23, 440.00, 349.23];
+      let step = 0;
+      bgmInterval = setInterval(() => {
+        playBgmNote(melody[step % melody.length], 0.18);
+        step++;
+      }, 220);
+    }
+
+    function stopBGM() {
+      if (bgmInterval) clearInterval(bgmInterval);
+    }
+
+    // Sound Effects
+    function playSFX(type) {
+      if (sfxMuted || !audioCtx) return;
+      initAudio();
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      if (type === 'correct') {
+        // Success Fanfare
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, now); // C5
+        osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+        osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+        osc.frequency.setValueAtTime(1046.50, now + 0.3); // C6
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+        osc.start(now);
+        osc.stop(now + 0.6);
+      } else if (type === 'wrong') {
+        // Explosion / Wrong Buzz
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(40, now + 0.3);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      } else if (type === 'hit') {
+        // Player Hit by Monster
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.setValueAtTime(110, now + 0.15);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      }
+    }
+
+    /* =========================================================================
+       3. LABIRIN & GAME ENGINE
+       ========================================================================= */
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Grid Specs (20 cols x 15 rows -> cell size 40x40)
+    const COLS = 20;
+    const ROWS = 15;
+    const CELL_SIZE = 40;
+
+    // Fixed Maze Map (0 = Path, 1 = Wall)
+    const mazeGrid = [
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+      [1,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1],
+      [1,0,1,0,1,0,1,1,0,1,0,1,1,0,1,0,1,1,0,1],
+      [1,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,1],
+      [1,0,1,1,1,1,0,1,1,1,1,0,1,1,1,1,0,1,0,1],
+      [1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1,0,0,0,1],
+      [1,1,1,1,0,1,1,1,1,0,1,1,1,1,0,1,1,1,0,1],
+      [1,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,1],
+      [1,0,1,1,1,1,1,0,1,1,1,1,1,1,1,1,0,1,0,1],
+      [1,0,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,1],
+      [1,1,1,1,1,0,1,1,1,1,1,0,1,1,0,1,1,1,0,1],
+      [1,0,0,0,1,0,0,0,0,0,1,0,0,1,0,0,0,1,0,1],
+      [1,0,1,0,1,1,1,1,1,0,1,1,0,1,1,1,0,1,0,1],
+      [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1],
+      [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
+
+    // 5 Fixed Answer Zone Locations (Zone A, B, C, D, E)
+    const zones = [
+      { id: 0, label: "A", col: 1, row: 1, color: "#3b82f6", disabled: false, safe: false },
+      { id: 1, label: "B", col: 18, row: 1, color: "#8b5cf6", disabled: false, safe: false },
+      { id: 2, label: "C", col: 1, row: 13, color: "#ec4899", disabled: false, safe: false },
+      { id: 3, label: "D", col: 18, row: 13, color: "#f59e0b", disabled: false, safe: false },
+      { id: 4, label: "E", col: 9, row: 7, color: "#10b981", disabled: false, safe: false }
+    ];
+
+    // Game States
+    let currentQuestionIdx = 0;
+    let score = 0;
+    let hp = 3;
+    let gameActive = false;
+    let particles = [];
+    let screenShake = 0;
+
+    // Player
+    const player = {
+      x: 10 * CELL_SIZE + CELL_SIZE/2,
+      y: 1 * CELL_SIZE + CELL_SIZE/2,
+      radius: 14,
+      speed: 3,
+      dx: 0,
+      dy: 0,
+      invulnerable: 0
+    };
+
+    // Monsters
+    let monsters = [];
+    function initMonsters() {
+      monsters = [
+        { x: 3 * CELL_SIZE + CELL_SIZE/2, y: 3 * CELL_SIZE + CELL_SIZE/2, vx: 2, vy: 0 },
+        { x: 16 * CELL_SIZE + CELL_SIZE/2, y: 3 * CELL_SIZE + CELL_SIZE/2, vx: 0, vy: 2 },
+        { x: 5 * CELL_SIZE + CELL_SIZE/2, y: 11 * CELL_SIZE + CELL_SIZE/2, vx: -2, vy: 0 },
+        { x: 14 * CELL_SIZE + CELL_SIZE/2, y: 11 * CELL_SIZE + CELL_SIZE/2, vx: 0, vy: -2 }
+      ];
+    }
+
+    // Input Handling
+    const keys = {};
+    window.addEventListener('keydown', e => {
+      keys[e.key] = true;
+      initAudio();
+    });
+    window.addEventListener('keyup', e => {
+      keys[e.key] = false;
+    });
+
+    function handlePadStart(dir) {
+      initAudio();
+      if (dir === 'Up') keys['ArrowUp'] = true;
+      if (dir === 'Down') keys['ArrowDown'] = true;
+      if (dir === 'Left') keys['ArrowLeft'] = true;
+      if (dir === 'Right') keys['ArrowRight'] = true;
+    }
+    function handlePadEnd(dir) {
+      if (dir === 'Up') keys['ArrowUp'] = false;
+      if (dir === 'Down') keys['ArrowDown'] = false;
+      if (dir === 'Left') keys['ArrowLeft'] = false;
+      if (dir === 'Right') keys['ArrowRight'] = false;
+    }
+
+    /* =========================================================================
+       4. GAME LOGIC & FLOW
+       ========================================================================= */
+    function startGame() {
+      initAudio();
+      document.getElementById('startOverlay').classList.add('hidden');
+      document.getElementById('gameOverOverlay').classList.add('hidden');
+      document.getElementById('victoryOverlay').classList.add('hidden');
+      
+      score = 0;
+      hp = 3;
+      currentQuestionIdx = 0;
+      gameActive = true;
+      
+      updateUI();
+      loadQuestion();
+      resetPlayerPos();
+      initMonsters();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function restartGame() {
+      startGame();
+    }
+
+    function resetPlayerPos() {
+      player.x = 10 * CELL_SIZE + CELL_SIZE/2;
+      player.y = 1 * CELL_SIZE + CELL_SIZE/2;
+      player.dx = 0;
+      player.dy = 0;
+      player.invulnerable = 60; // 1 second invulnerability
+    }
+
+    function updateUI() {
+      document.getElementById('scoreDisplay').innerText = score;
+      document.getElementById('hpDisplay').innerText = '❤'.repeat(hp) + '🖤'.repeat(Math.max(0, 3 - hp));
+      document.getElementById('questionNum').innerText = `SOAL ${currentQuestionIdx + 1} / ${questionBank.length}`;
+    }
+
+    function loadQuestion() {
+      const q = questionBank[currentQuestionIdx];
+      document.getElementById('questionText').innerText = q.q;
+
+      // Reset Zone Statuses
+      zones.forEach((z, i) => {
+        z.disabled = false;
+        z.safe = false;
+      });
+      updateUI();
+    }
+
+    /* =========================================================================
+       5. COLLISION & MOVEMENT
+       ========================================================================= */
+    function isWall(x, y) {
+      const col = Math.floor(x / CELL_SIZE);
+      const row = Math.floor(y / CELL_SIZE);
+      if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return true;
+      return mazeGrid[row][col] === 1;
+    }
+
+    function updatePlayer() {
+      let vx = 0;
+      let vy = 0;
+
+      if (keys['ArrowUp'] || keys['w'] || keys['W']) vy -= player.speed;
+      if (keys['ArrowDown'] || keys['s'] || keys['S']) vy += player.speed;
+      if (keys['ArrowLeft'] || keys['a'] || keys['A']) vx -= player.speed;
+      if (keys['ArrowRight'] || keys['d'] || keys['D']) vx += player.speed;
+
+      // Diagonal Speed Normalization
+      if (vx !== 0 && vy !== 0) {
+        vx *= 0.7071;
+        vy *= 0.7071;
+      }
+
+      // Move X
+      if (vx !== 0) {
+        const nextX = player.x + vx;
+        if (!isWall(nextX - player.radius, player.y) && !isWall(nextX + player.radius, player.y)) {
+          player.x = nextX;
+        }
+      }
+
+      // Move Y
+      if (vy !== 0) {
+        const nextY = player.y + vy;
+        if (!isWall(player.x, nextY - player.radius) && !isWall(player.x, nextY + player.radius)) {
+          player.y = nextY;
+        }
+      }
+
+      if (player.invulnerable > 0) player.invulnerable--;
+    }
+
+    function updateMonsters() {
+      monsters.forEach(m => {
+        // Check if monster tries to enter a SAFE barricaded zone
+        let nextX = m.x + m.vx;
+        let nextY = m.y + m.vy;
+
+        // Randomly change direction occasionally
+        if (Math.random() < 0.02) {
+          const dirs = [
+            {vx: 2, vy: 0}, {vx: -2, vy: 0},
+            {vx: 0, vy: 2}, {vx: 0, vy: -2}
+          ];
+          const rd = dirs[Math.floor(Math.random() * dirs.length)];
+          m.vx = rd.vx;
+          m.vy = rd.vy;
+        }
+
+        // Check Wall Collision or Safe Zone Barrier
+        let blocked = isWall(nextX, nextY);
+
+        // Check if point is inside a safe barricaded zone
+        zones.forEach(z => {
+          if (z.safe) {
+            const zX = z.col * CELL_SIZE;
+            const zY = z.row * CELL_SIZE;
+            if (nextX >= zX && nextX <= zX + CELL_SIZE && nextY >= zY && nextY <= zY + CELL_SIZE) {
+              blocked = true;
+            }
+          }
+        });
+
+        if (blocked) {
+          m.vx = -m.vx;
+          m.vy = -m.vy;
+        } else {
+          m.x = nextX;
+          m.y = nextY;
+        }
+
+        // Player Collision
+        if (player.invulnerable === 0) {
+          const dist = Math.hypot(player.x - m.x, player.y - m.y);
+          if (dist < player.radius + 12) {
+            playerHit();
+          }
+        }
+      });
+    }
+
+    function playerHit() {
+      hp--;
+      playSFX('hit');
+      screenShake = 15;
+      updateUI();
+      if (hp <= 0) {
+        gameOver();
+      } else {
+        resetPlayerPos();
+      }
+    }
+
+    function checkAnswerZones() {
+      const q = questionBank[currentQuestionIdx];
+
+      zones.forEach(z => {
+        const zCenterX = z.col * CELL_SIZE + CELL_SIZE/2;
+        const zCenterY = z.row * CELL_SIZE + CELL_SIZE/2;
+        const dist = Math.hypot(player.x - zCenterX, player.y - zCenterY);
+
+        if (dist < CELL_SIZE/2 && !z.disabled) {
+          if (z.id === q.correct) {
+            // BENAR!
+            z.safe = true; // Barrikade dari monster
+            score += 100;
+            playSFX('correct');
+            spawnFireworks(zCenterX, zCenterY);
+            updateUI();
+
+            gameActive = false; // Freeze temporarily
+            setTimeout(() => {
+              currentQuestionIdx++;
+              if (currentQuestionIdx >= questionBank.length) {
+                victory();
+              } else {
+                loadQuestion();
+                gameActive = true;
+              }
+            }, 1200);
+
+          } else {
+            // SALAH!
+            z.disabled = true;
+            playSFX('wrong');
+            spawnExplosion(zCenterX, zCenterY);
+            screenShake = 10;
+            updateUI();
+          }
+        }
+      });
+    }
+
+    /* =========================================================================
+       6. PARTICLES & VISUAL EFFECTS
+       ========================================================================= */
+    function spawnFireworks(x, y) {
+      const colors = ['#39ff14', '#00f3ff', '#ffd700', '#ff007f', '#ffffff'];
+      for (let i = 0; i < 40; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 5 + 2;
+        particles.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          alpha: 1,
+          size: Math.random() * 4 + 2,
+          life: 40
+        });
+      }
+    }
+
+    function spawnExplosion(x, y) {
+      for (let i = 0; i < 25; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 4 + 1;
+        particles.push({
+          x: x,
+          y: y,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed,
+          color: '#ef4444',
+          alpha: 1,
+          size: Math.random() * 5 + 3,
+          life: 25
+        });
+      }
+    }
+
+    function updateParticles() {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= 1 / p.life;
+        if (p.alpha <= 0) {
+          particles.splice(i, 1);
+        }
+      }
+    }
+
+    /* =========================================================================
+       7. RENDER ENGINE (CANVAS)
+       ========================================================================= */
+    function render() {
+      ctx.save();
+
+      // Screen Shake Effect
+      if (screenShake > 0) {
+        ctx.translate((Math.random() - 0.5) * screenShake, (Math.random() - 0.5) * screenShake);
+        screenShake *= 0.85;
+        if (screenShake < 0.5) screenShake = 0;
+      }
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Render Maze Walls
+      for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+          if (mazeGrid[r][c] === 1) {
+            ctx.fillStyle = "#1e293b";
+            ctx.fillRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+            ctx.strokeStyle = "#334155";
+            ctx.strokeRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+          } else {
+            ctx.fillStyle = "#090d16";
+            ctx.fillRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+          }
+        }
+      }
+
+      // Render Answer Zones
+      const q = questionBank[currentQuestionIdx];
+      zones.forEach((z) => {
+        const zX = z.col * CELL_SIZE;
+        const zY = z.row * CELL_SIZE;
+
+        if (z.safe) {
+          // Safe closed zone
+          ctx.fillStyle = "rgba(16, 185, 129, 0.4)";
+          ctx.fillRect(zX, zY, CELL_SIZE, CELL_SIZE);
+          ctx.strokeStyle = "#10b981";
+          ctx.lineWidth = 3;
+          ctx.strokeRect(zX, zY, CELL_SIZE, CELL_SIZE);
+          ctx.fillStyle = "#10b981";
+          ctx.font = "bold 20px Fira Code";
+          ctx.fillText("✓", zX + 13, zY + 28);
+        } else if (z.disabled) {
+          // Wrong / Exploded zone
+          ctx.fillStyle = "rgba(239, 68, 68, 0.3)";
+          ctx.fillRect(zX, zY, CELL_SIZE, CELL_SIZE);
+          ctx.strokeStyle = "#ef4444";
+          ctx.lineWidth = 2;
+          ctx.strokeRect(zX, zY, CELL_SIZE, CELL_SIZE);
+          ctx.fillStyle = "#ef4444";
+          ctx.font = "bold 18px Fira Code";
+          ctx.fillText("✗", zX + 14, zY + 26);
+        } else {
+          // Active Answer Zone
+          ctx.fillStyle = z.color + "33"; // semi transparent
+          ctx.fillRect(zX, zY, CELL_SIZE, CELL_SIZE);
+          ctx.strokeStyle = z.color;
+          ctx.lineWidth = 2;
+          ctx.strokeRect(zX, zY, CELL_SIZE, CELL_SIZE);
+
+          // Zone Label & Option Text
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 12px Fira Code";
+          ctx.fillText(`ZONE ${z.label}`, zX + 2, zY + 12);
+
+          // Command Option text inside zone
+          const optText = q.options[z.id];
+          ctx.fillStyle = z.color;
+          ctx.font = "bold 13px Fira Code";
+          ctx.fillText(optText, zX + 4, zY + 30);
+        }
+      });
+
+      // Render Monsters
+      monsters.forEach(m => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(m.x, m.y, 13, 0, Math.PI * 2);
+        ctx.fillStyle = "#ef4444";
+        ctx.shadowColor = "#ef4444";
+        ctx.shadowBlur = 10;
+        ctx.fill();
+
+        // Monster Eyes
+        ctx.fillStyle = "#ffffff";
+        ctx.beginPath();
+        ctx.arc(m.x - 4, m.y - 3, 3, 0, Math.PI * 2);
+        ctx.arc(m.x + 4, m.y - 3, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#000000";
+        ctx.beginPath();
+        ctx.arc(m.x - 4, m.y - 3, 1.5, 0, Math.PI * 2);
+        ctx.arc(m.x + 4, m.y - 3, 1.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Render Player (Tux Avatar)
+      if (player.invulnerable % 6 < 3) { // Blink effect when hit
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.radius, 0, Math.PI * 2);
+        ctx.fillStyle = "#00f3ff";
+        ctx.shadowColor = "#00f3ff";
+        ctx.shadowBlur = 12;
+        ctx.fill();
+
+        // Tux Mascot Symbol Text
+        ctx.fillStyle = "#000000";
+        ctx.font = "bold 14px Fira Code";
+        ctx.fillText("🐧", player.x - 8, player.y + 5);
+        ctx.restore();
+      }
+
+      // Render Particles
+      particles.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = p.alpha;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      ctx.restore();
+    }
+
+    /* =========================================================================
+       8. MAIN GAME LOOP & STATE ENDINGS
+       ========================================================================= */
+    function gameLoop() {
+      if (gameActive) {
+        updatePlayer();
+        updateMonsters();
+        checkAnswerZones();
+      }
+      updateParticles();
+      render();
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    function gameOver() {
+      gameActive = false;
+      document.getElementById('finalScoreFail').innerText = score;
+      document.getElementById('gameOverOverlay').classList.remove('hidden');
+    }
+
+    function victory() {
+      gameActive = false;
+      document.getElementById('finalScoreWin').innerText = score;
+      
+      const summaryList = document.getElementById('summaryList');
+      summaryList.innerHTML = '';
+      questionBank.forEach(q => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="text-cyan-400 font-bold">${q.options[q.correct]}</span>: ${q.desc}`;
+        summaryList.appendChild(li);
+      });
+
+      document.getElementById('victoryOverlay').classList.remove('hidden');
+    }
+
+    window.onload = function() {
+      render();
+    };
+  </script>
+</body>
+</html>
