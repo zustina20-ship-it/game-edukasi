@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>🏃 Lomba Lari - Pengenalan IP Address</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+  body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #ff512f 0%, #dd2476 100%);
+    color: white;
+    padding: 20px;
+  }
+  h1 { 
+    text-align: center; 
+    margin-bottom: 10px; 
+    font-size: 2.2em; 
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.4);
+    letter-spacing: 1px;
+  }
+  .subtitle { 
+    text-align: center; 
+    margin-bottom: 20px; 
+    opacity: 0.95;
+    font-size: 1em;
+  }
+
+  /* Arena Lintasan */
+  .arena {
+    max-width: 1000px;
+    margin: 0 auto 25px;
+    background: linear-gradient(to bottom, #8B4513 0%, #A0522D 100%);
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    position: relative;
+    border: 3px solid rgba(255,255,255,0.2);
+  }
+  .track {
+    position: relative;
+    height: 100px;
+    background: repeating-linear-gradient(
+      90deg,
+      #c1440e 0px,
+      #c1440e 40px,
+      #a83a0c 40px,
+      #a83a0c 80px
+    );
+    border-radius: 10px;
+    margin-bottom: 15px;
+    border: 3px solid white;
+    overflow: hidden;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.3);
+  }
+  .track:last-child { margin-bottom: 0; }
+
+  .start-line {
+    position: absolute;
+    left: 5%;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: white;
+    z-index: 2;
+    box-shadow: 0 0 10px rgba(255,255,255,0.8);
+  }
+  .finish-line {
+    position: absolute;
+    right: 5%;
+    top: 0;
+    bottom: 0;
+    width: 25px;
+    background: repeating-linear-gradient(
+      0deg,
+      white 0px,
+      white 12px,
+      black 12px,
+      black 24px
+    );
+    z-index: 2;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  }
+  .track-label {
+    position: absolute;
+    top: 8px;
+    left: 15px;
+    background: rgba(0,0,0,0.7);
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.9em;
+    font-weight: bold;
+    z-index: 3;
+    border: 2px solid rgba(255,255,255,0.3);
+  }
+
+  .runner {
+    position: absolute;
+    top: 50%;
+    left: 5%;
+    transform: translate(-50%, -50%);
+    font-size: 3.5em;
+    transition: left 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    z-index: 4;
+    filter: drop-shadow(3px 3px 5px rgba(0,0,0,0.6));
+  }
+  .runner.running { animation: run 0.3s infinite alternate; }
+  @keyframes run {
+    0% { transform: translate(-50%, -50%) rotate(-8deg) scale(1.05); }
+    100% { transform: translate(-50%, -50%) rotate(8deg) scale(1.05); }
+  }
+  .runner.winner { animation: celebrate 0.6s infinite alternate; }
+  @keyframes celebrate {
+    0% { transform: translate(-50%, -50%) scale(1); }
+    100% { transform: translate(-50%, -50%) scale(1.4); }
+  }
+  .runner.stay { animation: stay 0.5s; }
+  @keyframes stay {
+    0%, 100% { transform: translate(-50%, -50%); }
+    50% { transform: translate(-50%, -50%) scale(0.9); }
+  }
+
+  /* Scoreboard */
+  .scoreboard {
+    display: flex;
+    justify-content: space-around;
+    max-width: 1000px;
+    margin: 0 auto 20px;
+    gap: 20px;
+  }
+  .score-card {
+    flex: 1;
+    padding: 18px;
+    border-radius: 12px;
+    text-align: center;
+    background: rgba(255,255,255,0.15);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255,255,255,0.2);
+  }
+  .score-card.r1 { border: 2px solid #ff6b6b; box-shadow: 0 0 20px rgba(255,107,107,0.3); }
+  .score-card.r2 { border: 2px solid #4ecdc4; box-shadow: 0 0 20px rgba(78,205,196,0.3); }
+  .score-card h3 { margin-bottom: 8px; font-size: 1.1em; }
+  .score-num { font-size: 2.2em; font-weight: bold; }
+
+  .status {
+    text-align: center;
+    font-size: 1.3em;
+    margin-bottom: 15px;
+    padding: 12px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    max-width: 1000px;
+    margin-left: auto;
+    margin-right: auto;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+  .status .turn { color: #FFD700; font-weight: bold; font-size: 1.1em; }
+
+  /* Quiz Box */
+  .quiz-box {
+    max-width: 750px;
+    margin: 0 auto;
+    background: rgba(255,255,255,0.97);
+    color: #333;
+    padding: 28px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    border: 2px solid rgba(255,255,255,0.5);
+  }
+  .question-num {
+    display: inline-block;
+    background: linear-gradient(135deg, #ff512f, #dd2476);
+    color: white;
+    padding: 6px 14px;
+    border-radius: 15px;
+    font-size: 0.9em;
+    margin-bottom: 12px;
+    font-weight: bold;
+  }
+  .question {
+    font-size: 1.2em;
+    margin-bottom: 20px;
+    line-height: 1.5;
+    font-weight: 600;
+    color: #2c3e50;
+  }
+  .options { display: grid; gap: 10px; }
+  .option {
+    padding: 13px 18px;
+    background: #f0f4f8;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    font-size: 1em;
+    font-family: 'Consolas', monospace;
+    color: #2c3e50;
+  }
+  .option:hover:not(:disabled) {
+    background: #ffe0e0;
+    border-color: #ff512f;
+    transform: translateX(5px);
+  }
+  .option.correct { 
+    background: #c8e6c9; 
+    border-color: #4caf50; 
+    color: #2e7d32; 
+    font-weight: bold; 
+  }
+  .option.wrong { 
+    background: #ffcdd2; 
+    border-color: #f44336; 
+    color: #c62828; 
+  }
+  .option:disabled { cursor: not-allowed; }
+
+  .feedback {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: bold;
+    display: none;
+    font-size: 1.05em;
+  }
+  .feedback.show { display: block; }
+  .feedback.correct { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+  .feedback.wrong { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+
+  .next-btn {
+    margin-top: 15px;
+    padding: 13px 30px;
+    background: linear-gradient(135deg, #ff512f, #dd2476);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    cursor: pointer;
+    display: none;
+    width: 100%;
+    font-weight: bold;
+    transition: all 0.3s;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+  }
+  .next-btn:hover { 
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+  }
+  .next-btn.show { display: block; }
+
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+  }
+  .modal.show { display: flex; }
+  .modal-content {
+    background: white;
+    color: #333;
+    padding: 45px;
+    border-radius: 20px;
+    text-align: center;
+    max-width: 500px;
+    animation: pop 0.5s;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  @keyframes pop {
+    0% { transform: scale(0) rotate(-180deg); }
+    100% { transform: scale(1) rotate(0); }
+  }
+  .modal h2 { font-size: 2.3em; margin-bottom: 15px; color: #dd2476; }
+  .modal .trophy { font-size: 5em; margin-bottom: 10px; }
+  .restart-btn {
+    margin-top: 20px;
+    padding: 13px 35px;
+    background: linear-gradient(135deg, #ff512f, #dd2476);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+  }
+  .restart-btn:hover { 
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(0,0,0,0.3);
+  }
+
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85em;
+    margin-top: 8px;
+    opacity: 0.95;
+  }
+  .progress-bar {
+    height: 8px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+    margin-top: 8px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #FFD700, #FFA500);
+    transition: width 0.8s ease;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+
+<h1>🏃 Lomba Lari: Pengenalan IP Address 🏁</h1>
+<p class="subtitle">Jawab benar untuk berlari menuju finish!</p>
+
+<!-- Arena Lintasan -->
+<div class="arena">
+  <div class="track">
+    <div class="track-label">🔴 RUNNER 1</div>
+    <div class="start-line"></div>
+    <div class="finish-line"></div>
+    <div class="runner" id="runner1">🏃</div>
+  </div>
+
+  <div class="track">
+    <div class="track-label">🔵 RUNNER 2</div>
+    <div class="start-line"></div>
+    <div class="finish-line"></div>
+    <div class="runner" id="runner2">🏃‍♂️</div>
+  </div>
+</div>
+
+<!-- Scoreboard -->
+<div class="scoreboard">
+  <div class="score-card r1">
+    <h3>🔴 RUNNER 1</h3>
+    <div>Benar: <span class="score-num" id="score1">0</span></div>
+    <div class="progress-info">
+      <span>Soal: <span id="q1">1</span>/5</span>
+      <span>Posisi: <span id="pos1">0</span>%</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress1" style="width: 0%;"></div>
+    </div>
+  </div>
+  <div class="score-card r2">
+    <h3>🔵 RUNNER 2</h3>
+    <div>Benar: <span class="score-num" id="score2">0</span></div>
+    <div class="progress-info">
+      <span>Soal: <span id="q2">1</span>/5</span>
+      <span>Posisi: <span id="pos2">0</span>%</span>
+    </div>
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress2" style="width: 0%;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Status -->
+<div class="status" id="status">
+  Giliran: <span class="turn" id="turnLabel">RUNNER 1 🔴</span>
+</div>
+
+<!-- Quiz -->
+<div class="quiz-box" id="quizBox">
+  <span class="question-num" id="qNum">Soal 1</span>
+  <div class="question" id="question">Memuat soal...</div>
+  <div class="options" id="options"></div>
+  <div class="feedback" id="feedback"></div>
+  <button class="next-btn" id="nextBtn" onclick="nextTurn()">Lanjut ▶</button>
+</div>
+
+<!-- Winner Modal -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <div class="trophy" id="trophy">🏆</div>
+    <h2 id="winnerText">Pemenang!</h2>
+    <p id="finalScore"></p>
+    <button class="restart-btn" onclick="restartGame()">🔄 Main Lagi</button>
+  </div>
+</div>
+
+<script>
+// === SOAL PENGENALAN IP ADDRESS ===
+// 5 topik sama untuk kedua runner, dengan soal berbeda
+
+const questionsR1 = [
+  {
+    q: "IP Address 192.168.1.10 termasuk dalam kelas berapa?",
+    options: ["Kelas A", "Kelas B", "Kelas C", "Kelas D"],
+    answer: 2
+  },
+  {
+    q: "Subnet mask default untuk IP Address kelas C adalah...",
+    options: ["255.0.0.0", "255.255.0.0", "255.255.255.0", "255.255.255.255"],
+    answer: 2
+  },
+  {
+    q: "Manakah yang merupakan IP Address PRIVATE?",
+    options: ["8.8.8.8", "192.168.1.1", "203.150.10.5", "172.217.14.99"],
+    answer: 1
+  },
+  {
+    q: "Network ID dari IP Address 192.168.10.50/24 adalah...",
+    options: ["192.168.0.0", "192.168.10.0", "192.168.10.50", "192.168.255.255"],
+    answer: 1
+  },
+  {
+    q: "Broadcast address dari IP Address 192.168.1.100/24 adalah...",
+    options: ["192.168.1.0", "192.168.1.100", "192.168.1.255", "192.168.255.255"],
+    answer: 2
+  }
+];
+
+const questionsR2 = [
+  {
+    q: "IP Address 10.0.0.5 termasuk dalam kelas berapa?",
+    options: ["Kelas A", "Kelas B", "Kelas C", "Kelas D"],
+    answer: 0
+  },
+  {
+    q: "Subnet mask default untuk IP Address kelas A adalah...",
+    options: ["255.0.0.0", "255.255.0.0", "255.255.255.0", "255.255.255.255"],
+    answer: 0
+  },
+  {
+    q: "Manakah yang merupakan IP Address PUBLIC?",
+    options: ["10.10.5.1", "172.16.0.5", "192.168.0.1", "203.150.10.5"],
+    answer: 3
+  },
+  {
+    q: "Network ID dari IP Address 172.16.5.100/16 adalah...",
+    options: ["172.0.0.0", "172.16.0.0", "172.16.5.0", "172.16.5.100"],
+    answer: 1
+  },
+  {
+    q: "Broadcast address dari IP Address 10.0.0.50/8 adalah...",
+    options: ["10.0.0.0", "10.0.0.255", "10.255.255.255", "10.0.255.255"],
+    answer: 2
+  }
+];
+
+// === STATE ===
+let currentRunner = 1;
+let idx1 = 0, idx2 = 0;
+let score1 = 0, score2 = 0;
+let pos1 = 0, pos2 = 0; // posisi 0-100 (persentase lintasan)
+let answered = false;
+let gameOver = false;
+
+const STEP_PERCENT = 20; // tiap jawaban benar = +20% (5 soal = 100%)
+// Jawaban salah: runner tetap di tempat (tidak mundur)
+
+function updateUI() {
+  document.getElementById('score1').textContent = score1;
+  document.getElementById('score2').textContent = score2;
+  document.getElementById('q1').textContent = Math.min(idx1 + 1, 5);
+  document.getElementById('q2').textContent = Math.min(idx2 + 1, 5);
+  document.getElementById('pos1').textContent = pos1;
+  document.getElementById('pos2').textContent = pos2;
+  document.getElementById('progress1').style.width = pos1 + '%';
+  document.getElementById('progress2').style.width = pos2 + '%';
+
+  const turnLabel = document.getElementById('turnLabel');
+  if (currentRunner === 1) {
+    turnLabel.textContent = 'RUNNER 1 🔴';
+    turnLabel.style.color = '#ff6b6b';
+  } else {
+    turnLabel.textContent = 'RUNNER 2 🔵';
+    turnLabel.style.color = '#4ecdc4';
+  }
+
+  // Posisi runner: start di 5%, finish di 95%
+  const startPos = 5;
+  const endPos = 95;
+  const range = endPos - startPos;
+
+  const r1Left = startPos + (pos1 / 100) * range;
+  const r2Left = startPos + (pos2 / 100) * range;
+
+  document.getElementById('runner1').style.left = r1Left + '%';
+  document.getElementById('runner2').style.left = r2Left + '%';
+}
+
+function loadQuestion() {
+  answered = false;
+  const questions = currentRunner === 1 ? questionsR1 : questionsR2;
+  const idx = currentRunner === 1 ? idx1 : idx2;
+  const q = questions[idx];
+
+  document.getElementById('qNum').textContent = `Soal ${idx + 1} untuk RUNNER ${currentRunner}`;
+  document.getElementById('question').textContent = q.q;
+
+  const optBox = document.getElementById('options');
+  optBox.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = String.fromCharCode(65 + i) + '. ' + opt;
+    btn.onclick = () => selectAnswer(i, q.answer, btn);
+    optBox.appendChild(btn);
+  });
+
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('nextBtn').className = 'next-btn';
+}
+
+function selectAnswer(selected, correct, btn) {
+  if (answered || gameOver) return;
+  answered = true;
+
+  const allBtns = document.querySelectorAll('.option');
+  allBtns.forEach((b, i) => {
+    b.disabled = true;
+    if (i === correct) b.classList.add('correct');
+    if (i === selected && i !== correct) b.classList.add('wrong');
+  });
+
+  const fb = document.getElementById('feedback');
+  const runnerEl = document.getElementById('runner' + currentRunner);
+
+  if (selected === correct) {
+    // Jawaban benar -> runner maju
+    if (currentRunner === 1) {
+      score1++;
+      pos1 = Math.min(100, pos1 + STEP_PERCENT);
+    } else {
+      score2++;
+      pos2 = Math.min(100, pos2 + STEP_PERCENT);
+    }
+    fb.textContent = `✅ BENAR! Runner ${currentRunner} berlari maju! 🏃💨`;
+    fb.className = 'feedback correct show';
+
+    // Animasi lari
+    runnerEl.classList.add('running');
+    setTimeout(() => runnerEl.classList.remove('running'), 800);
+  } else {
+    // Jawaban salah -> runner tetap di tempat (tidak mundur)
+    fb.textContent = `❌ SALAH! Runner ${currentRunner} tetap di tempat. Coba lagi lain kali!`;
+    fb.className = 'feedback wrong show';
+
+    // Animasi stay
+    runnerEl.classList.add('stay');
+    setTimeout(() => runnerEl.classList.remove('stay'), 500);
+  }
+
+  updateUI();
+
+  // Cek pemenang (ada yang mencapai finish)
+  if (pos1 >= 100 || pos2 >= 100) {
+    setTimeout(() => endGame(), 1000);
+    return;
+  }
+
+  document.getElementById('nextBtn').className = 'next-btn show';
+}
+
+function nextTurn() {
+  // Increment index runner yang baru saja menjawab
+  if (currentRunner === 1) idx1++;
+  else idx2++;
+
+  // Cek apakah semua soal sudah dijawab
+  if (idx1 >= 5 && idx2 >= 5) {
+    endGame();
+    return;
+  }
+
+  // Ganti giliran
+  if (currentRunner === 1) {
+    currentRunner = idx2 < 5 ? 2 : 1;
+  } else {
+    currentRunner = idx1 < 5 ? 1 : 2;
+  }
+
+  updateUI();
+  loadQuestion();
+}
+
+function endGame() {
+  if (gameOver) return;
+  gameOver = true;
+
+  const modal = document.getElementById('modal');
+  const trophy = document.getElementById('trophy');
+  const winnerText = document.getElementById('winnerText');
+  const finalScore = document.getElementById('finalScore');
+
+  let winner = '';
+
+  // Jika salah satu mencapai finish
+  if (pos1 >= 100 && pos2 >= 100) {
+    winner = '🤝 SERI! Keduanya sampai finish!';
+    trophy.textContent = '🤝';
+  } else if (pos1 >= 100) {
+    winner = '🔴 RUNNER 1 MENANG! 🏁';
+    trophy.textContent = '🏆';
+    document.getElementById('runner1').classList.add('winner');
+  } else if (pos2 >= 100) {
+    winner = '🔵 RUNNER 2 MENANG! 🏁';
+    trophy.textContent = '🏆';
+    document.getElementById('runner2').classList.add('winner');
+  } else {
+    // Tidak ada yang finish, bandingkan posisi
+    if (pos1 > pos2) {
+      winner = '🔴 RUNNER 1 MENANG! (Lebih jauh)';
+      trophy.textContent = '🏆';
+      document.getElementById('runner1').classList.add('winner');
+    } else if (pos2 > pos1) {
+      winner = '🔵 RUNNER 2 MENANG! (Lebih jauh)';
+      trophy.textContent = '🏆';
+      document.getElementById('runner2').classList.add('winner');
+    } else {
+      winner = '🤝 SERI!';
+      trophy.textContent = '🤝';
+    }
+  }
+
+  winnerText.textContent = winner;
+  finalScore.innerHTML = `
+    📊 Skor Akhir<br>
+    🔴 Runner 1: <b>${score1} benar</b> (Posisi: ${pos1}%)<br>
+    🔵 Runner 2: <b>${score2} benar</b> (Posisi: ${pos2}%)
+  `;
+  modal.classList.add('show');
+}
+
+function restartGame() {
+  currentRunner = 1;
+  idx1 = 0; idx2 = 0;
+  score1 = 0; score2 = 0;
+  pos1 = 0; pos2 = 0;
+  answered = false;
+  gameOver = false;
+  document.getElementById('modal').classList.remove('show');
+  document.getElementById('runner1').classList.remove('winner');
+  document.getElementById('runner2').classList.remove('winner');
+  updateUI();
+  loadQuestion();
+}
+
+// Start
+updateUI();
+loadQuestion();
+</script>
+
+</body>
+</html>
