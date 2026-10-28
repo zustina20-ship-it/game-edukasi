@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Tarik Tambang - Pengenalan Jaringan</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+  body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+    color: white;
+    padding: 20px;
+    overflow-x: hidden;
+  }
+  h1 { text-align: center; margin-bottom: 10px; font-size: 2em; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }
+  .subtitle { text-align: center; margin-bottom: 20px; opacity: 0.9; }
+
+  /* Arena Tarik Tambang */
+  .arena {
+    position: relative;
+    width: 100%;
+    max-width: 900px;
+    height: 220px;
+    margin: 0 auto 30px;
+    background: linear-gradient(to bottom, #87CEEB 0%, #98D8C8 60%, #6B8E23 60%, #556B2F 100%);
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  }
+  .team {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 3em;
+    transition: all 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    z-index: 3;
+  }
+  .team-left { left: 20px; }
+  .team-right { right: 20px; }
+  .team-name {
+    position: absolute;
+    top: 10px;
+    font-size: 0.9em;
+    font-weight: bold;
+    padding: 5px 15px;
+    border-radius: 20px;
+    z-index: 4;
+  }
+  .name-left { left: 10px; background: #e74c3c; }
+  .name-right { right: 10px; background: #3498db; }
+
+  /* Tali */
+  .rope-container {
+    position: absolute;
+    top: 50%;
+    left: 50px;
+    right: 50px;
+    height: 12px;
+    transform: translateY(-50%);
+    background: #8B4513;
+    border-radius: 6px;
+    z-index: 1;
+  }
+  .rope-mark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 30px;
+    height: 30px;
+    background: radial-gradient(circle, #FFD700, #FFA500);
+    border: 3px solid #fff;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    transition: left 0.8s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    z-index: 2;
+    box-shadow: 0 0 15px #FFD700;
+  }
+  .center-line {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 4px;
+    height: 100%;
+    background: repeating-linear-gradient(0deg, #fff, #fff 5px, transparent 5px, transparent 10px);
+    z-index: 0;
+  }
+
+  /* Scoreboard */
+  .scoreboard {
+    display: flex;
+    justify-content: space-around;
+    max-width: 900px;
+    margin: 0 auto 20px;
+    gap: 20px;
+  }
+  .score-card {
+    flex: 1;
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(10px);
+  }
+  .score-card.left { border: 2px solid #e74c3c; }
+  .score-card.right { border: 2px solid #3498db; }
+  .score-card h3 { margin-bottom: 5px; }
+  .score-num { font-size: 2em; font-weight: bold; }
+
+  /* Status */
+  .status {
+    text-align: center;
+    font-size: 1.3em;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: rgba(0,0,0,0.3);
+    border-radius: 10px;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .status .turn { color: #FFD700; font-weight: bold; }
+
+  /* Quiz Box */
+  .quiz-box {
+    max-width: 700px;
+    margin: 0 auto;
+    background: rgba(255,255,255,0.95);
+    color: #333;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  }
+  .question-num {
+    display: inline-block;
+    background: #2a5298;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 15px;
+    font-size: 0.9em;
+    margin-bottom: 10px;
+  }
+  .question {
+    font-size: 1.2em;
+    margin-bottom: 20px;
+    line-height: 1.5;
+    font-weight: 600;
+  }
+  .options { display: grid; gap: 10px; }
+  .option {
+    padding: 12px 18px;
+    background: #f0f4f8;
+    border: 2px solid #ddd;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    font-size: 1em;
+  }
+  .option:hover:not(:disabled) {
+    background: #e3f2fd;
+    border-color: #2196F3;
+    transform: translateX(5px);
+  }
+  .option.correct { background: #c8e6c9; border-color: #4caf50; color: #2e7d32; font-weight: bold; }
+  .option.wrong { background: #ffcdd2; border-color: #f44336; color: #c62828; }
+  .option:disabled { cursor: not-allowed; }
+
+  .feedback {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    font-weight: bold;
+    display: none;
+  }
+  .feedback.show { display: block; }
+  .feedback.correct { background: #d4edda; color: #155724; }
+  .feedback.wrong { background: #f8d7da; color: #721c24; }
+
+  .next-btn {
+    margin-top: 15px;
+    padding: 12px 30px;
+    background: #2a5298;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1em;
+    cursor: pointer;
+    display: none;
+    width: 100%;
+  }
+  .next-btn:hover { background: #1e3c72; }
+  .next-btn.show { display: block; }
+
+  /* Winner Modal */
+  .modal {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 100;
+    justify-content: center;
+    align-items: center;
+  }
+  .modal.show { display: flex; }
+  .modal-content {
+    background: white;
+    color: #333;
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    max-width: 500px;
+    animation: pop 0.5s;
+  }
+  @keyframes pop {
+    0% { transform: scale(0); }
+    100% { transform: scale(1); }
+  }
+  .modal h2 { font-size: 2.5em; margin-bottom: 15px; }
+  .modal .trophy { font-size: 5em; margin-bottom: 10px; }
+  .restart-btn {
+    margin-top: 20px;
+    padding: 12px 30px;
+    background: #2a5298;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    cursor: pointer;
+  }
+  .restart-btn:hover { background: #1e3c72; }
+
+  .shake { animation: shake 0.5s; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+  }
+</style>
+</head>
+<body>
+
+<h1>🪢 Tarik Tambang: Pengenalan Jaringan 🪢</h1>
+<p class="subtitle">Jawab benar untuk menarik tali ke arah timmu!</p>
+
+<!-- Arena -->
+<div class="arena">
+  <div class="team-name name-left">TIM MERAH</div>
+  <div class="team-name name-right">TIM BIRU</div>
+  <div class="team team-left" id="teamLeft">🧑‍🤝‍🧑</div>
+  <div class="team team-right" id="teamRight">🧑‍🤝‍🧑</div>
+  <div class="rope-container">
+    <div class="center-line"></div>
+    <div class="rope-mark" id="ropeMark"></div>
+  </div>
+</div>
+
+<!-- Scoreboard -->
+<div class="scoreboard">
+  <div class="score-card left">
+    <h3>🔴 TIM MERAH (Kiri)</h3>
+    <div>Skor: <span class="score-num" id="scoreLeft">0</span></div>
+    <div style="font-size:0.85em; opacity:0.8;">Soal ke: <span id="qLeft">1</span>/5</div>
+  </div>
+  <div class="score-card right">
+    <h3>🔵 TIM BIRU (Kanan)</h3>
+    <div>Skor: <span class="score-num" id="scoreRight">0</span></div>
+    <div style="font-size:0.85em; opacity:0.8;">Soal ke: <span id="qRight">1</span>/5</div>
+  </div>
+</div>
+
+<!-- Status -->
+<div class="status" id="status">
+  Giliran: <span class="turn" id="turnLabel">TIM MERAH</span>
+</div>
+
+<!-- Quiz -->
+<div class="quiz-box" id="quizBox">
+  <span class="question-num" id="qNum">Soal 1</span>
+  <div class="question" id="question">Memuat soal...</div>
+  <div class="options" id="options"></div>
+  <div class="feedback" id="feedback"></div>
+  <button class="next-btn" id="nextBtn" onclick="nextTurn()">Lanjut ▶</button>
+</div>
+
+<!-- Winner Modal -->
+<div class="modal" id="modal">
+  <div class="modal-content">
+    <div class="trophy" id="trophy">🏆</div>
+    <h2 id="winnerText">Pemenang!</h2>
+    <p id="finalScore"></p>
+    <button class="restart-btn" onclick="restartGame()">🔄 Main Lagi</button>
+  </div>
+</div>
+
+<script>
+// === SOAL (topik sama untuk kedua tim, tapi soal berbeda) ===
+// Topik: Pengenalan Jaringan Komputer
+const questionsLeft = [
+  {
+    q: "Apa yang dimaksud dengan jaringan komputer?",
+    options: [
+      "Kumpulan komputer yang saling terhubung untuk berbagi data dan sumber daya",
+      "Satu komputer yang berdiri sendiri",
+      "Perangkat untuk mencetak dokumen",
+      "Program untuk mengedit foto"
+    ],
+    answer: 0
+  },
+  {
+    q: "Jaringan komputer yang mencakup area kecil seperti ruangan atau gedung disebut...",
+    options: ["WAN", "MAN", "LAN", "PAN"],
+    answer: 2
+  },
+  {
+    q: "Topologi jaringan di mana semua komputer terhubung ke satu kabel pusat disebut...",
+    options: ["Star", "Bus", "Ring", "Mesh"],
+    answer: 1
+  },
+  {
+    q: "Perangkat jaringan yang berfungsi menghubungkan dua jaringan berbeda dan meneruskan paket data adalah...",
+    options: ["Hub", "Switch", "Router", "Modem"],
+    answer: 2
+  },
+  {
+    q: "Alamat unik yang digunakan untuk mengidentifikasi perangkat dalam jaringan disebut...",
+    options: ["URL", "IP Address", "Email", "Username"],
+    answer: 1
+  }
+];
+
+const questionsRight = [
+  {
+    q: "Manfaat utama dari jaringan komputer adalah...",
+    options: [
+      "Memperlambat akses data",
+      "Berbagi file, printer, dan koneksi internet",
+      "Menghapus data secara otomatis",
+      "Membuat komputer lebih berat"
+    ],
+    answer: 1
+  },
+  {
+    q: "Jaringan yang mencakup area satu kota atau antar kota dalam satu provinsi disebut...",
+    options: ["LAN", "PAN", "WAN", "MAN"],
+    answer: 3
+  },
+  {
+    q: "Topologi jaringan di mana setiap komputer terhubung ke satu perangkat pusat (hub/switch) adalah...",
+    options: ["Ring", "Bus", "Star", "Tree"],
+    answer: 2
+  },
+  {
+    q: "Perangkat yang mengubah sinyal digital menjadi analog dan sebaliknya untuk akses internet disebut...",
+    options: ["Switch", "Router", "Hub", "Modem"],
+    answer: 3
+  },
+  {
+    q: "Protokol standar yang digunakan untuk komunikasi data di internet adalah...",
+    options: ["HTTP", "TCP/IP", "FTP", "SMTP"],
+    answer: 1
+  }
+];
+
+// === STATE ===
+let currentTeam = 'left'; // 'left' atau 'right'
+let idxLeft = 0, idxRight = 0;
+let scoreLeft = 0, scoreRight = 0;
+let ropePos = 0; // -5 sampai +5 (negatif = kiri menang, positif = kanan menang)
+let answered = false;
+
+function updateUI() {
+  document.getElementById('scoreLeft').textContent = scoreLeft;
+  document.getElementById('scoreRight').textContent = scoreRight;
+  document.getElementById('qLeft').textContent = Math.min(idxLeft + 1, 5);
+  document.getElementById('qRight').textContent = Math.min(idxRight + 1, 5);
+
+  const turnLabel = document.getElementById('turnLabel');
+  turnLabel.textContent = currentTeam === 'left' ? 'TIM MERAH 🔴' : 'TIM BIRU 🔵';
+  turnLabel.style.color = currentTeam === 'left' ? '#ff6b6b' : '#74b9ff';
+
+  // Rope position: 0% = kiri, 100% = kanan, 50% = tengah
+  const percent = 50 + (ropePos * 8); // tiap poin = 8%
+  document.getElementById('ropeMark').style.left = percent + '%';
+
+  // Gerakkan karakter tim
+  const leftOffset = 20 + (ropePos < 0 ? Math.abs(ropePos) * 15 : 0);
+  const rightOffset = 20 + (ropePos > 0 ? ropePos * 15 : 0);
+  document.getElementById('teamLeft').style.left = leftOffset + 'px';
+  document.getElementById('teamRight').style.right = rightOffset + 'px';
+}
+
+function loadQuestion() {
+  answered = false;
+  const questions = currentTeam === 'left' ? questionsLeft : questionsRight;
+  const idx = currentTeam === 'left' ? idxLeft : idxRight;
+  const q = questions[idx];
+
+  document.getElementById('qNum').textContent = `Soal ${idx + 1} untuk ${currentTeam === 'left' ? 'TIM MERAH' : 'TIM BIRU'}`;
+  document.getElementById('question').textContent = q.q;
+
+  const optBox = document.getElementById('options');
+  optBox.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option';
+    btn.textContent = String.fromCharCode(65 + i) + '. ' + opt;
+    btn.onclick = () => selectAnswer(i, q.answer, btn);
+    optBox.appendChild(btn);
+  });
+
+  document.getElementById('feedback').className = 'feedback';
+  document.getElementById('feedback').textContent = '';
+  document.getElementById('nextBtn').className = 'next-btn';
+}
+
+function selectAnswer(selected, correct, btn) {
+  if (answered) return;
+  answered = true;
+
+  const allBtns = document.querySelectorAll('.option');
+  allBtns.forEach((b, i) => {
+    b.disabled = true;
+    if (i === correct) b.classList.add('correct');
+    if (i === selected && i !== correct) b.classList.add('wrong');
+  });
+
+  const fb = document.getElementById('feedback');
+  const arena = document.querySelector('.arena');
+
+  if (selected === correct) {
+    // Jawaban benar -> tali ke arah tim yang menjawab
+    if (currentTeam === 'left') {
+      scoreLeft++;
+      ropePos--;
+    } else {
+      scoreRight++;
+      ropePos++;
+    }
+    fb.textContent = '✅ BENAR! Tali bergerak ke arah ' + (currentTeam === 'left' ? 'TIM MERAH' : 'TIM BIRU') + '!';
+    fb.className = 'feedback correct show';
+  } else {
+    // Jawaban salah -> tali ke arah lawan
+    if (currentTeam === 'left') {
+      ropePos++;
+    } else {
+      ropePos--;
+    }
+    fb.textContent = '❌ SALAH! Tali bergerak ke arah ' + (currentTeam === 'left' ? 'TIM BIRU' : 'TIM MERAH') + '!';
+    fb.className = 'feedback wrong show';
+    arena.classList.add('shake');
+    setTimeout(() => arena.classList.remove('shake'), 500);
+  }
+
+  updateUI();
+  document.getElementById('nextBtn').className = 'next-btn show';
+}
+
+function nextTurn() {
+  // Increment index tim yang baru saja menjawab
+  if (currentTeam === 'left') idxLeft++;
+  else idxRight++;
+
+  // Cek apakah game selesai (kedua tim sudah 5 soal)
+  if (idxLeft >= 5 && idxRight >= 5) {
+    endGame();
+    return;
+  }
+  // Cek menang lebih cepat (jika salah satu tim sudah habis soal & skor jauh)
+  // Tapi aturan soal: tetap 5 per tim, jadi lanjut sampai habis
+
+  // Ganti giliran (selama tim tersebut masih punya soal)
+  if (currentTeam === 'left') {
+    if (idxRight < 5) currentTeam = 'right';
+    else currentTeam = 'left'; // tim kanan habis, tim kiri lanjut sendiri
+  } else {
+    if (idxLeft < 5) currentTeam = 'left';
+    else currentTeam = 'right';
+  }
+
+  updateUI();
+  loadQuestion();
+}
+
+function endGame() {
+  const modal = document.getElementById('modal');
+  const trophy = document.getElementById('trophy');
+  const winnerText = document.getElementById('winnerText');
+  const finalScore = document.getElementById('finalScore');
+
+  let winner = '';
+  if (scoreLeft > scoreRight) {
+    winner = '🔴 TIM MERAH MENANG!';
+    trophy.textContent = '🏆';
+  } else if (scoreRight > scoreLeft) {
+    winner = '🔵 TIM BIRU MENANG!';
+    trophy.textContent = '🏆';
+  } else {
+    winner = '🤝 SERI!';
+    trophy.textContent = '🤝';
+  }
+
+  winnerText.textContent = winner;
+  finalScore.innerHTML = `Skor Akhir<br>🔴 Tim Merah: <b>${scoreLeft}</b> &nbsp;|&nbsp; 🔵 Tim Biru: <b>${scoreRight}</b>`;
+  modal.classList.add('show');
+}
+
+function restartGame() {
+  currentTeam = 'left';
+  idxLeft = 0; idxRight = 0;
+  scoreLeft = 0; scoreRight = 0;
+  ropePos = 0;
+  document.getElementById('modal').classList.remove('show');
+  updateUI();
+  loadQuestion();
+}
+
+// Start
+updateUI();
+loadQuestion();
+</script>
+
+</body>
+</html>
